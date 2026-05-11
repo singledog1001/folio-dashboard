@@ -212,7 +212,7 @@ html.dark .muted{color:var(--ink2)!important}
 .footer a{color:var(--blue);text-decoration:none}
 
 /* toast */
-.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:999}
+.toast{position:fixed;bottom:28px;right:28px;background:#1a1a2e;color:#ffffff;padding:14px 22px;border-radius:12px;font-size:15px;font-weight:500;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.15);max-width:280px;line-height:1.4}
 .toast.show{opacity:1;transform:translateY(0)}
 
 @media(max-width:900px){
@@ -1086,6 +1086,135 @@ html.dark .muted{color:var(--ink2)!important}
     </div>
   </div>
 
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     Trading 212 板塊
+     ══════════════════════════════════════════════════════════════ -->
+<div style="max-width:1400px;margin:var(--gap) auto 0;padding:0 24px">
+  <div class="acc-card open" id="acc-t212">
+    <div class="acc-header" onclick="toggleAcc('acc-t212')">
+      <div class="acc-left">
+        <div style="width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#1DB954,#0a8f3c);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0">T</div>
+        <span class="acc-title">Trading 212 工具箱</span>
+      </div>
+      <span class="acc-meta">ISA · 匯率 · 碎股計算</span>
+      <div class="acc-chevron">▾</div>
+    </div>
+    <div class="acc-body">
+      <div class="acc-inner" style="padding-top:1rem">
+
+        <!-- ISA + FX + Quick Links row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:1.5rem">
+
+          <!-- ISA 免稅額追蹤 -->
+          <div style="background:var(--green-soft);border:1px solid var(--green)33;border-radius:12px;padding:1rem">
+            <div style="font-size:11px;color:var(--green);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">🏦 ISA 免稅額 2025/26</div>
+            <div style="margin-bottom:8px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:4px">
+                <span>已用</span>
+                <span id="isa-used-label">£0 / £20,000</span>
+              </div>
+              <div style="height:8px;background:var(--ph1);border-radius:4px;overflow:hidden">
+                <div id="isa-bar" style="height:100%;width:0%;background:var(--green);border-radius:4px;transition:width .6s"></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="number" id="isa-input" placeholder="輸入已投入 £" min="0" max="20000"
+                style="flex:1;background:var(--input-bg);border:1px solid var(--topbar-border);color:var(--ink);padding:6px 8px;border-radius:7px;font-size:12px;outline:none"
+                oninput="updateISA(this.value)" />
+              <span style="font-size:11px;color:var(--green);font-weight:600" id="isa-remaining">剩 £20,000</span>
+            </div>
+            <div style="font-size:11px;color:var(--ink2);margin-top:6px">每年4月6日重設 · 免資本增值稅</div>
+          </div>
+
+          <!-- GBP/USD 匯率換算 -->
+          <div style="background:var(--blue-soft);border:1px solid var(--blue)33;border-radius:12px;padding:1rem">
+            <div style="font-size:11px;color:var(--blue);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">💱 GBP → USD 換算</div>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+              <span style="font-size:13px;color:var(--ink2)">£</span>
+              <input type="number" id="gbp-input" placeholder="英鎊金額" min="0"
+                style="flex:1;background:var(--input-bg);border:1px solid var(--topbar-border);color:var(--ink);padding:6px 8px;border-radius:7px;font-size:13px;outline:none"
+                oninput="convertGBP(this.value)" />
+            </div>
+            <div style="background:var(--input-bg);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:11px;color:var(--ink2);margin-bottom:2px">約等於</div>
+              <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:600;color:var(--blue)" id="usd-result">$0.00</div>
+              <div style="font-size:10px;color:var(--ink2);margin-top:2px">匯率 <span id="fx-rate">載入中...</span> · T212手續費 -0.15%</div>
+            </div>
+            <button class="btn soft" style="width:100%;margin-top:8px;font-size:12px;padding:7px" onclick="fetchFXRate()">🔄 更新匯率</button>
+          </div>
+
+          <!-- 碎股計算器 -->
+          <div style="background:var(--purple-soft);border:1px solid var(--purple)33;border-radius:12px;padding:1rem">
+            <div style="font-size:11px;color:var(--purple);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">📐 碎股計算器</div>
+            <div style="margin-bottom:6px">
+              <label style="font-size:11px;color:var(--ink2)">股票現價 $</label>
+              <input type="number" id="frac-price" placeholder="例如 135.40" min="0" step="0.01"
+                style="width:100%;background:var(--input-bg);border:1px solid var(--topbar-border);color:var(--ink);padding:6px 8px;border-radius:7px;font-size:12px;outline:none;margin-top:3px"
+                oninput="calcFractional()" />
+            </div>
+            <div style="margin-bottom:8px">
+              <label style="font-size:11px;color:var(--ink2)">投入金額 $</label>
+              <input type="number" id="frac-amount" placeholder="例如 500" min="0"
+                style="width:100%;background:var(--input-bg);border:1px solid var(--topbar-border);color:var(--ink);padding:6px 8px;border-radius:7px;font-size:12px;outline:none;margin-top:3px"
+                oninput="calcFractional()" />
+            </div>
+            <div style="background:var(--input-bg);border-radius:8px;padding:8px;text-align:center">
+              <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:600;color:var(--purple)" id="frac-shares">0 股</div>
+              <div style="font-size:11px;color:var(--ink2);margin-top:2px" id="frac-sub">輸入數據計算</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Quick buy watchlist -->
+        <div style="margin-bottom:1rem">
+          <div style="font-size:11px;color:var(--ink2);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">⚡ 快速前往 Trading 212</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap" id="t212-quick">
+            <!-- 你嘅自選股 + 熱門股 -->
+          </div>
+        </div>
+
+        <!-- T212 Tips -->
+        <div style="background:var(--input-bg);border-radius:12px;padding:1rem">
+          <div style="font-size:13px;font-weight:500;margin-bottom:10px">💡 Trading 212 新手貼士</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">🏦 用 ISA 賬戶</div>
+              <div style="color:var(--ink2)">唔係 Invest 賬戶，ISA 嘅盈利完全免稅</div>
+            </div>
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">💱 匯率費 0.15%</div>
+              <div style="color:var(--ink2)">入錢時自動換美元，費用極低</div>
+            </div>
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">🍕 碎股投資</div>
+              <div style="color:var(--ink2)">最少 $1 就可以買 NVDA，唔使買整股</div>
+            </div>
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">📅 定期投資</div>
+              <div style="color:var(--ink2)">設定自動定投，每月固定買入，平均成本</div>
+            </div>
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">🔔 價格提醒</div>
+              <div style="color:var(--ink2)">App 內可設定目標價通知，唔使成日睇</div>
+            </div>
+            <div style="padding:8px 10px;background:var(--card-bg);border-radius:8px;font-size:12px;line-height:1.5">
+              <div style="font-weight:500;margin-bottom:3px">📊 W-8BEN</div>
+              <div style="color:var(--ink2)">記得簽署，英國居民股息稅 15% 而非 30%</div>
+            </div>
+          </div>
+          <a href="https://www.trading212.com" target="_blank"
+            style="display:block;text-align:center;margin-top:10px;padding:10px;background:linear-gradient(135deg,#1DB954,#0a8f3c);color:#fff;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none">
+            🚀 前往 Trading 212 ↗
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </div>
 
 <div class="footer">
@@ -2328,6 +2457,87 @@ function showApiSaved(){
   document.getElementById('api-clear-btn').style.display = 'inline-flex';
 }
 
+
+// ══════════════════════════════════════════════════════════════
+// Trading 212 工具箱
+// ══════════════════════════════════════════════════════════════
+let currentFXRate = 1.27; // GBP/USD default
+
+async function fetchFXRate(){
+  try{
+    if(API){
+      const r = await fetch(`https://finnhub.io/api/v1/forex/rates?base=GBP&token=${API}`);
+      const d = await r.json();
+      if(d.quote?.USD){ currentFXRate = d.quote.USD; }
+    } else {
+      // Fallback: use approximate rate
+      currentFXRate = 1.27;
+    }
+    document.getElementById('fx-rate').textContent = '1 GBP = $'+currentFXRate.toFixed(4);
+    // Re-calculate if there's input
+    const gbpVal = document.getElementById('gbp-input').value;
+    if(gbpVal) convertGBP(gbpVal);
+  }catch(e){
+    document.getElementById('fx-rate').textContent = '~1.27 (估算)';
+  }
+}
+
+function convertGBP(val){
+  const gbp = parseFloat(val)||0;
+  const usd = gbp * currentFXRate * 0.9985; // minus 0.15% fee
+  document.getElementById('usd-result').textContent = '$'+usd.toFixed(2);
+}
+
+function calcFractional(){
+  const price = parseFloat(document.getElementById('frac-price').value)||0;
+  const amount = parseFloat(document.getElementById('frac-amount').value)||0;
+  if(!price||!amount){
+    document.getElementById('frac-shares').textContent = '0 股';
+    document.getElementById('frac-sub').textContent = '輸入數據計算';
+    return;
+  }
+  const shares = amount/price;
+  document.getElementById('frac-shares').textContent = shares.toFixed(4)+' 股';
+  document.getElementById('frac-sub').textContent = '每股 $'+price.toFixed(2)+' · 總值 $'+amount.toFixed(2);
+}
+
+function updateISA(val){
+  const used = Math.min(parseFloat(val)||0, 20000);
+  const remaining = 20000 - used;
+  const pct = (used/20000*100).toFixed(1);
+  document.getElementById('isa-used-label').textContent = '£'+used.toLocaleString()+' / £20,000';
+  document.getElementById('isa-bar').style.width = pct+'%';
+  document.getElementById('isa-bar').style.background = used>18000?'var(--red)':used>15000?'var(--amber)':'var(--green)';
+  document.getElementById('isa-remaining').textContent = '剩 £'+remaining.toLocaleString();
+  try{ localStorage.setItem('folio-isa', used); }catch(e){}
+}
+
+function renderT212Quick(){
+  const el = document.getElementById('t212-quick');
+  if(!el) return;
+  const stocks = [...new Set([...watchlist, 'VOO','QQQ','NVDA','AAPL','TSLA'])].slice(0,12);
+  el.innerHTML = stocks.map(sym=>`
+    <a href="https://www.trading212.com/trading/buy/${sym}" target="_blank"
+      style="display:inline-flex;align-items:center;gap:5px;background:var(--input-bg);border:1px solid var(--topbar-border);border-radius:8px;padding:7px 12px;font-size:13px;font-family:'DM Mono',monospace;font-weight:500;color:var(--ink);text-decoration:none;transition:all .15s"
+      onmouseover="this.style.borderColor='#1DB954';this.style.color='#1DB954'"
+      onmouseout="this.style.borderColor='var(--topbar-border)';this.style.color='var(--ink)'"
+    >${sym} ↗</a>`).join('');
+}
+
+// Restore ISA value
+try{
+  const savedISA = localStorage.getItem('folio-isa');
+  if(savedISA){
+    document.getElementById('isa-input').value = savedISA;
+    updateISA(savedISA);
+  }
+}catch(e){}
+
+// Init
+fetchFXRate();
+setTimeout(renderT212Quick, 500);
+
+
 // ── Dark Mode ─────────────────────────────────────────────────────────────
 function saveProxyUrl(url){
   PROXY_URL = url.trim();
@@ -2844,6 +3054,31 @@ async function runAnalysis(){
     const price = q.c, prevClose = q.pc, chgPct = q.dp;
     const closes = candleRes.c||[];
 
+    // Check if stock data exists
+    if(!price && !p.name){
+      document.getElementById('ar-ai-content').innerHTML = `
+        <div style="padding:1rem;background:var(--amber-soft);border-radius:10px;border:1px solid var(--amber)33">
+          <div style="font-weight:600;color:var(--amber);margin-bottom:8px">⚠️ 找不到 "${sym}" 嘅數據</div>
+          <div style="font-size:13px;color:var(--ink);line-height:1.6">
+            可能原因：<br>
+            • 股票代號唔正確（注意大細階）<br>
+            • 呢隻股票喺 Finnhub 免費版冇覆蓋<br>
+            • 係新上市或剛改名嘅股票<br><br>
+            建議試試：<span style="font-family:'DM Mono',monospace;font-size:12px">NVDA、AAPL、MSFT、TSLA、WDC</span>
+          </div>
+        </div>`;
+      document.getElementById('ar-ai-loading').textContent = '';
+      document.getElementById('ar-verdict').textContent = '數據不足';
+      document.getElementById('ar-verdict').style.cssText = 'padding:10px 20px;border-radius:12px;font-size:15px;font-weight:600;background:var(--amber-soft);color:var(--amber)';
+      document.getElementById('ar-scores').innerHTML = '';
+      document.getElementById('ar-fund-content').innerHTML = '<div style="color:var(--ink2);font-size:13px">無法取得數據</div>';
+      document.getElementById('ar-tech-content').innerHTML = '<div style="color:var(--ink2);font-size:13px">無法取得數據</div>';
+      document.getElementById('ar-risk-content').innerHTML = '<div style="color:var(--ink2);font-size:13px">無法取得數據</div>';
+      document.getElementById('ar-entry-content').innerHTML = '<div style="color:var(--ink2);font-size:13px">無法取得數據</div>';
+      btn.disabled=false; btn.textContent='分析 ↗';
+      return;
+    }
+
     // ── Header
     document.getElementById('ar-name').textContent = p.name || sym;
     document.getElementById('ar-sym').textContent = sym;
@@ -3269,14 +3504,7 @@ function doSearchSelect(sym){
   setTimeout(() => runAnalysis(), 300);
 }
 
-function doSearchSelect(sym){
-  closeSearch();
-  const acc = document.getElementById('acc-analysis');
-  if(acc && !acc.classList.contains('open')) acc.classList.add('open');
-  acc?.scrollIntoView({behavior:'smooth', block:'start'});
-  document.getElementById('analysisSym').value = sym;
-  setTimeout(() => runAnalysis(), 300);
-}
+
 
 
 // Restore API key from localStorage
