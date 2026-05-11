@@ -286,7 +286,13 @@ html.dark .muted{color:var(--ink2)!important}
 <div class="topbar">
   <div class="logo">F<span>o</span>lio</div>
   <div class="nav-right">
-    <input class="api-input" type="text" id="apiKey" placeholder="貼上 Finnhub API Key..." />
+    <div style="display:flex;align-items:center;gap:6px;flex:1;max-width:320px">
+      <input class="api-input" type="text" id="apiKey" placeholder="貼上 Finnhub API Key..."
+        style="flex:1" oninput="onApiKeyInput(this.value)" />
+      <span id="api-saved-badge" style="display:none;font-size:11px;background:var(--green-soft);color:var(--green);padding:3px 8px;border-radius:6px;white-space:nowrap;font-weight:500">✓ 已儲存</span>
+      <button id="api-clear-btn" onclick="clearApiKey()" title="清除 API Key"
+        style="display:none;background:none;border:1px solid var(--topbar-border);border-radius:8px;padding:6px 8px;cursor:pointer;color:var(--ink2);font-size:12px;white-space:nowrap">✕</button>
+    </div>
     <button class="btn" onclick="loadAll()" id="loadBtn">載入數據 ↗</button>
     <button class="btn soft" onclick="useDemo()">演示模式</button>
     <button onclick="openSearch()" style="background:var(--input-bg);border:1px solid var(--topbar-border);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif" title="搜尋股票 (/)"><span>🔍</span><span style="font-size:12px;color:var(--ink2)">搜尋股票</span><span style="font-size:11px;color:var(--ink3);background:var(--ph1);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace">/</span></button>
@@ -1386,6 +1392,8 @@ function renderDemoWL(){
 async function loadAll(){
   API=document.getElementById('apiKey').value.trim();
   if(!API){showToast('請先輸入 Finnhub API Key');return;}
+  // Save API key to localStorage
+  try{ localStorage.setItem('folio-api-key', API); }catch(e){}
   const btn=document.getElementById('loadBtn');
   btn.disabled=true;btn.textContent='載入中...';
   loadMood();
@@ -1404,6 +1412,7 @@ async function loadAll(){
   if(API) setTimeout(checkAlerts, 2000);
   btn.disabled=false;btn.textContent='重新整理 ↗';
   showToast('數據載入完成！');
+  showApiSaved();
 }
 
 function useDemo(){
@@ -2296,6 +2305,28 @@ function copyAIResult() {
   navigator.clipboard.writeText(text).then(() => showToast('已複製分析結果'));
 }
 
+
+
+// ── API Key persistence ───────────────────────────────────────
+function onApiKeyInput(val){
+  // Hide saved badge when user is typing new key
+  document.getElementById('api-saved-badge').style.display = 'none';
+}
+
+function clearApiKey(){
+  API = '';
+  document.getElementById('apiKey').value = '';
+  document.getElementById('api-saved-badge').style.display = 'none';
+  document.getElementById('api-clear-btn').style.display = 'none';
+  try{ localStorage.removeItem('folio-api-key'); }catch(e){}
+  showToast('API Key 已清除');
+  useDemo();
+}
+
+function showApiSaved(){
+  document.getElementById('api-saved-badge').style.display = 'inline-flex';
+  document.getElementById('api-clear-btn').style.display = 'inline-flex';
+}
 
 // ── Dark Mode ─────────────────────────────────────────────────────────────
 function saveProxyUrl(url){
@@ -3248,6 +3279,21 @@ function doSearchSelect(sym){
 }
 
 
+// Restore API key from localStorage
+try{
+  const savedKey = localStorage.getItem('folio-api-key');
+  if(savedKey){
+    API = savedKey;
+    const inp = document.getElementById('apiKey');
+    if(inp) inp.value = savedKey;
+    // Show saved indicator
+    setTimeout(() => {
+      document.getElementById('api-saved-badge').style.display = 'inline-flex';
+      document.getElementById('api-clear-btn').style.display = 'inline-flex';
+    }, 100);
+  }
+}catch(e){}
+
 // Restore proxy URL
 try{
   const saved = localStorage.getItem('folio-proxy-url');
@@ -3255,7 +3301,7 @@ try{
 }catch(e){}
 
 // init
-useDemo();
+if(API){ loadAll(); } else { useDemo(); }
 </script>
 </body>
 </html>
