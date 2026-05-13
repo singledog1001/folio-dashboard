@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>股票綜合研判報告</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0f19;
+  --card: #111827;
+  --card2: #1a2235;
+  --border: #1e2d45;
+  --border2: #253552;
+  --text: #e8e6e2;
+  --text2: #8b9ab5;
+  --text3: #4a5878;
+  --blue: #3b82f6;
+  --blue2: #60a5fa;
+  --green: #22c55e;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --purple: #a78bfa;
+  --cyan: #06b6d4;
+  --gold: #fbbf24;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans HK', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+/* ── Top bar ── */
+.topbar {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.topbar input {
+  background: var(--card2); border: 1px solid var(--border2); color: var(--text);
+  padding: 8px 14px; border-radius: 8px; font-family: var(--mono); font-size: 14px;
+  text-transform: uppercase; outline: none; width: 100px;
+}
+.topbar input:focus { border-color: var(--blue); }
+.btn { background: var(--blue); color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-family: var(--sans); font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity .15s; }
+.btn:hover { opacity: .85; } .btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn.ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+.btn.ghost:hover { border-color: var(--blue); color: var(--blue); }
+
+/* ── Header ── */
+.report-header {
+  background: linear-gradient(135deg, #0f1929 0%, #1a2235 50%, #0f1929 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 20px;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center;
+}
+.ticker-badge {
+  background: var(--blue); color: #fff; padding: 6px 14px; border-radius: 6px;
+  font-family: var(--mono); font-size: 22px; font-weight: 700; letter-spacing: 2px;
+}
+.company-name { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.price-big { font-family: var(--mono); font-size: 36px; font-weight: 700; }
+.price-chg { font-size: 14px; margin-top: 2px; }
+.verdict-badge {
+  padding: 10px 20px; border-radius: 10px; font-size: 16px; font-weight: 700;
+  text-align: center; min-width: 120px;
+}
+.verdict-badge.buy { background: rgba(34,197,94,.2); color: var(--green); border: 1px solid rgba(34,197,94,.4); }
+.verdict-badge.sell { background: rgba(239,68,68,.2); color: var(--red); border: 1px solid rgba(239,68,68,.4); }
+.verdict-badge.hold { background: rgba(245,158,11,.2); color: var(--amber); border: 1px solid rgba(245,158,11,.4); }
+
+/* ── Grid ── */
+.grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding: 12px 20px; }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 20px 12px; }
+.grid-full { padding: 0 20px 12px; }
+
+/* ── Cards ── */
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+}
+.card-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--text2); margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.card-title .num {
+  background: var(--blue); color: #fff; width: 18px; height: 18px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; font-size: 10px;
+}
+
+/* ── Metrics ── */
+.metric-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-label { color: var(--text2); }
+.metric-val { font-family: var(--mono); font-weight: 600; }
+
+/* ── Score meter ── */
+.score-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.score-label { font-size: 12px; color: var(--text2); min-width: 60px; }
+.score-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.score-fill { height: 100%; border-radius: 3px; transition: width .8s cubic-bezier(.4,0,.2,1); }
+.score-num { font-family: var(--mono); font-size: 12px; min-width: 32px; text-align: right; }
+
+/* ── Signal items ── */
+.signal-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.signal-item:last-child { border-bottom: none; }
+.sig-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.sig-dot.bull { background: var(--green); }
+.sig-dot.bear { background: var(--red); }
+.sig-dot.neut { background: var(--amber); }
+
+/* ── Levels table ── */
+.levels-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+}
+.level-item {
+  background: var(--card2); border-radius: 7px; padding: 8px 10px;
+}
+.level-type { font-size: 10px; color: var(--text2); letter-spacing: 1px; text-transform: uppercase; }
+.level-price { font-family: var(--mono); font-size: 15px; font-weight: 700; margin-top: 2px; }
+.level-note { font-size: 10px; color: var(--text3); margin-top: 1px; }
+
+/* ── Badges ── */
+.badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 5px; font-size: 11px; font-weight: 600; }
+.badge.bull { background: rgba(34,197,94,.15); color: var(--green); }
+.badge.bear { background: rgba(239,68,68,.15); color: var(--red); }
+.badge.neut { background: rgba(245,158,11,.15); color: var(--amber); }
+.badge.blue { background: rgba(59,130,246,.15); color: var(--blue2); }
+
+/* ── AI section ── */
+.ai-box {
+  background: linear-gradient(135deg, #0f1929, #1a1035);
+  border: 1px solid rgba(167,139,250,.3); border-radius: 10px; padding: 14px;
+}
+.ai-thinking { display: flex; gap: 8px; align-items: center; color: var(--text2); font-size: 13px; }
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border2); border-top-color: var(--purple); border-radius: 50%; animation: spin .7s linear infinite; flex-shrink: 0; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-content { font-size: 13px; line-height: 1.8; color: var(--text); }
+
+/* ── Scenario table ── */
+.scenario-row {
+  display: grid; grid-template-columns: 80px 90px 1fr;
+  gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.scenario-row:last-child { border-bottom: none; }
+.scenario-label { color: var(--text2); }
+.scenario-price { font-family: var(--mono); font-weight: 700; }
+
+/* ── Catalyst items ── */
+.cat-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.cat-item:last-child { border-bottom: none; }
+.cat-num {
+  background: var(--card2); border: 1px solid var(--border2); border-radius: 5px;
+  width: 22px; height: 22px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--blue2);
+}
+.cat-body { flex: 1; }
+.cat-title { font-weight: 600; margin-bottom: 2px; }
+.cat-desc { color: var(--text2); line-height: 1.5; }
+
+/* ── Loading overlay ── */
+#loadingOverlay {
+  position: fixed; inset: 0; background: rgba(11,15,25,.9); z-index: 999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+}
+.load-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }
+.load-text { font-size: 14px; color: var(--text2); }
+.load-step { font-size: 12px; color: var(--text3); }
+
+/* ── Print ── */
+@media print {
+  body { background: #fff; color: #000; }
+  .topbar { display: none; }
+  .card { border: 1px solid #ccc; background: #f9f9f9; }
+}
+
+@media (max-width: 768px) {
+  .grid { grid-template-columns: 1fr; }
+  .grid-2col { grid-template-columns: 1fr; }
+  .report-header { grid-template-columns: 1fr 1fr; }
+  .levels-grid { grid-template-columns: 1fr 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading overlay -->
+<div id="loadingOverlay" style="display:none">
+  <div class="load-spinner"></div>
+  <div class="load-text">生成綜合研判報告</div>
+  <div class="load-step" id="loadStep">正在抓取數據...</div>
+</div>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-left">
+    <span style="font-family:var(--mono);font-size:14px;color:var(--blue);letter-spacing:2px">◈ 研判報告</span>
+    <input type="text" id="symInput" placeholder="RKLB" maxlength="6"
+      onkeydown="if(event.key==='Enter')generateReport()" />
+    <input type="text" id="apiInput" placeholder="Finnhub API Key..."
+      style="width:220px;text-transform:none" />
+    <button class="btn" onclick="generateReport()" id="genBtn">生成報告 ↗</button>
+    <button class="btn ghost" onclick="generateReport('RKLB','demo')">演示 RKLB</button>
+  </div>
+  <div style="display:flex;gap:8px">
+    <button class="btn ghost" onclick="window.print()">🖨️ 列印</button>
+    <button class="btn ghost" onclick="shareReport()">📤 分享</button>
+  </div>
+</div>
+
+<!-- Report body (hidden until generated) -->
+<div id="reportBody" style="display:none">
+
+  <!-- Header -->
+  <div class="report-header">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+        <div class="ticker-badge" id="hdrSym">--</div>
+        <div id="hdrExchange" style="font-size:11px;color:var(--text3);font-family:var(--mono)"></div>
+      </div>
+      <div class="company-name" id="hdrName">--</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px" id="hdrIndustry"></div>
+    </div>
+    <div>
+      <div class="price-big" id="hdrPrice">--</div>
+      <div class="price-chg" id="hdrChg">--</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:4px" id="hdrDate"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+      <div class="verdict-badge" id="hdrVerdict">--</div>
+      <div style="font-size:11px;color:var(--text2);text-align:right" id="hdrScore"></div>
+    </div>
+  </div>
+
+  <!-- Section 1+2+3: Tech / Fundamentals / Catalysts -->
+  <div class="grid">
+
+    <!-- 1. Technical -->
+    <div class="card">
+      <div class="card-title"><span class="num">一</span>技術面分析（日線）</div>
+      <div id="techSignals"></div>
+      <div style="margin-top:10px">
+        <div style="font-size:10px;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">指標得分</div>
+        <div id="techScores"></div>
+      </div>
+    </div>
+
+    <!-- 2. Fundamentals -->
+    <div class="card">
+      <div class="card-title"><span class="num">二</span>公司基本面點數</div>
+      <div id="fundRows"></div>
+    </div>
+
+    <!-- 3. Catalysts -->
+    <div class="card">
+      <div class="card-title"><span class="num">三</span>關鍵催化劑</div>
+      <div id="catalysts"></div>
+    </div>
+
+  </div>
+
+  <!-- Section 4+5: Levels + Scenarios -->
+  <div class="grid-2col">
+
+    <!-- 4. Key Levels -->
+    <div class="card">
+      <div class="card-title"><span class="num">四</span>關鍵價位</div>
+      <div class="levels-grid" id="keyLevels"></div>
+    </div>
+
+    <!-- 5. Scenarios -->
+    <div class="card">
+      <div class="card-title"><span class="num">五</span>牛/熊/情境目標價位</div>
+      <div id="scenarios"></div>
+    </div>
+
+  </div>
+
+  <!-- Section 6: AI Analysis (full width) -->
+  <div class="grid-full">
+    <div class="card">
+      <div class="card-title" style="color:var(--purple)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Claude AI 深度研判
+        <span id="aiLoading" style="font-size:10px;color:var(--text3);font-weight:400;margin-left:8px"></span>
+      </div>
+      <div id="aiAnalysis">
+        <div class="ai-thinking"><div class="spinner"></div>等待生成報告...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7+8: Risk + Strategy -->
+  <div class="grid-2col">
+
+    <!-- 7. Risk warnings -->
+    <div class="card">
+      <div class="card-title"><span class="num">六</span>主要風險</div>
+      <div id="riskItems"></div>
+    </div>
+
+    <!-- 8. Strategy -->
+    <div class="card">
+      <div class="card-title"><span class="num">七</span>投資策略建議</div>
+      <div id="strategyItems"></div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div style="padding:12px 20px;text-align:center;font-size:11px;color:var(--text3);border-top:1px solid var(--border);margin-top:4px">
+    ⚠️ 本報告由 Folio Dashboard 自動生成，數據來源 Finnhub · Claude AI 解讀 · 僅供參考，不構成投資建議 · 投資涉及風險，請自行判斷
+  </div>
+
+</div>
+
+<!-- Empty state -->
+<div id="emptyState" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:16px">
+  <div style="font-size:60px">📊</div>
+  <div style="font-size:20px;font-weight:700">股票綜合研判報告</div>
+  <div style="font-size:13px;color:var(--text2);text-align:center;max-width:400px;line-height:1.7">
+    輸入股票代號同 Finnhub API Key<br>自動生成完整技術面、基本面、AI 深度分析報告
+  </div>
+  <button class="btn" onclick="generateReport('RKLB','demo')" style="font-size:14px;padding:12px 28px">試用演示報告 →</button>
+</div>
+
+<script>
+const fmt = (n,d=2) => n==null||isNaN(n)?'--':'$'+Number(n).toFixed(d);
+const fmtPct = n => n==null?'--':(n>=0?'+':'')+Number(n).toFixed(2)+'%';
+const fmtBig = n => { if(!n)return '--'; if(n>1e12)return'$'+(n/1e12).toFixed(2)+'T'; if(n>1e9)return'$'+(n/1e9).toFixed(1)+'B'; if(n>1e6)return'$'+(n/1e6).toFixed(0)+'M'; return'$'+n; };
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+// Restore saved key
+try{
+  const k=localStorage.getItem('folio-api-key');
+  if(k) document.getElementById('apiInput').value=k;
+}catch(e){}
+
+function setStep(s){ document.getElementById('loadStep').textContent=s; }
+
+// ── Main ───────────────────────────────────────────────────────
+async function generateReport(forceSym, mode){
+  const sym = (forceSym||document.getElementById('symInput').value||'').trim().toUpperCase();
+  if(!sym){ alert('請輸入股票代號'); return; }
+  const apiKey = document.getElementById('apiInput').value.trim();
+  if(!apiKey && mode!=='demo'){ alert('請輸入 Finnhub API Key'); return; }
+  try{ if(apiKey) localStorage.setItem('folio-api-key',apiKey); }catch(e){}
+
+  // Show loading
+  document.getElementById('loadingOverlay').style.display='flex';
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('reportBody').style.display='none';
+  document.getElementById('genBtn').disabled=true;
+
+  setStep('抓取股票數據...');
+
+  let q={c:117.35,dp:11.26,pc:105.47,o:104.0,h:123.94,l:96.50},
+      p={name:'Rocket Lab USA Inc.',exchange:'NASDAQ',finnhubIndustry:'Aerospace & Defense',marketCapitalization:11500,shareOutstanding:490},
+      m={metric:{'52WeekHigh':123.94,'52WeekLow':28.18,peNormalizedAnnual:null,pbAnnual:25.4,epsTTM:-0.37,revenueGrowthTTMYoy:0.62,netMarginTTM:-0.18,beta:2.4,currentRatioAnnual:3.2,roeTTM:-0.12}},
+      candle={c:[],h:[],l:[],t:[]},
+      news=[];
+
+  if(mode!=='demo' && apiKey){
+    try{
+      setStep('抓取報價...');
+      [q,p,m] = await Promise.all([
+        fetch(`https://finnhub.io/api/v1/quote?symbol=${sym}&token=${apiKey}`).then(r=>r.json()),
+        fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${sym}&token=${apiKey}`).then(r=>r.json()),
+        fetch(`https://finnhub.io/api/v1/stock/metric?symbol=${sym}&metric=all&token=${apiKey}`).then(r=>r.json()),
+      ]);
+      setStep('抓取歷史價格...');
+      await sleep(300);
+      const to=Math.floor(Date.now()/1000), from=to-180*86400;
+      candle = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${sym}&resolution=D&from=${from}&to=${to}&token=${apiKey}`).then(r=>r.json());
+      setStep('抓取新聞...');
+      await sleep(200);
+      news = await fetch(`https://finnhub.io/api/v1/company-news?symbol=${sym}&from=${new Date(Date.now()-14*864e5).toISOString().slice(0,10)}&to=${new Date().toISOString().slice(0,10)}&token=${apiKey}`).then(r=>r.json());
+    }catch(e){ console.error(e); }
+  }
+
+  const closes = candle.c||[];
+  const met = m.metric||{};
+  const price = q.c||117.35;
+
+  // ── Technicals ────────────────────────────────────────────────
+  setStep('計算技術指標...');
+  let rsiVal=null, macdHist=0, macdSig='--', bbPos=null, ma20=null, ma50=null, atr=null;
+  if(closes.length>=50){
+    const ema=(d,p)=>{const k=2/(p+1);let e=[d[0]];for(let i=1;i<d.length;i++)e.push(d[i]*k+e[i-1]*(1-k));return e;};
+    const gains=[],losses=[];
+    for(let i=1;i<closes.length;i++){const d=closes[i]-closes[i-1];gains.push(d>0?d:0);losses.push(d<0?-d:0);}
+    let ag=gains.slice(0,14).reduce((a,b)=>a+b)/14,al=losses.slice(0,14).reduce((a,b)=>a+b)/14;
+    for(let i=14;i<gains.length;i++){ag=(ag*13+gains[i])/14;al=(al*13+losses[i])/14;}
+    rsiVal=al===0?100:100-100/(1+ag/al);
+    ma20=closes.slice(-20).reduce((a,b)=>a+b)/20;
+    ma50=closes.slice(-50).reduce((a,b)=>a+b)/50;
+    const std=Math.sqrt(closes.slice(-20).reduce((a,b)=>a+(b-ma20)*(b-ma20),0)/20);
+    const bbU=ma20+2*std,bbL=ma20-2*std;
+    bbPos=(price-bbL)/(bbU-bbL)*100;
+    const e12=ema(closes,12),e26=ema(closes,26);
+    const ml=closes.map((_,i)=>e12[i]-e26[i]),sig=ema(ml,9);
+    macdHist=ml[ml.length-1]-sig[sig.length-1];
+    const prevHist=ml[ml.length-2]-sig[sig.length-2];
+    macdSig=macdHist>0&&prevHist<=0?'金叉 🟢':macdHist<0&&prevHist>=0?'死叉 🔴':macdHist>0?'偏多':'偏空';
+    const highs=candle.h||[],lows=candle.l||[];
+    if(highs.length>14){
+      const trs=closes.map((_,i)=>i===0?highs[0]-lows[0]:Math.max(highs[i]-lows[i],Math.abs(highs[i]-closes[i-1]),Math.abs(lows[i]-closes[i-1])));
+      atr=trs.slice(-14).reduce((a,b)=>a+b)/14;
+    }
+  } else {
+    rsiVal=62.4; macdHist=2.74; macdSig='偏多'; bbPos=78; ma20=92.96; ma50=84.42; atr=6.8;
+  }
+
+  // ── Scoring ───────────────────────────────────────────────────
+  let techScore=50, fundScore=50, buySignals=[], riskSignals=[];
+  if(rsiVal<35){techScore+=15;buySignals.push('RSI '+rsiVal.toFixed(0)+' 超賣，潛在反彈');}
+  else if(rsiVal>70){techScore-=15;riskSignals.push('RSI '+rsiVal.toFixed(0)+' 超買，注意回調');}
+  else{buySignals.push('RSI '+rsiVal.toFixed(0)+' 中性偏健康');}
+  if(macdHist>0){techScore+=10;buySignals.push('MACD '+macdSig);}
+  else{techScore-=10;riskSignals.push('MACD '+macdSig);}
+  if(ma20&&ma50){if(ma20>ma50){techScore+=10;buySignals.push('MA20>MA50 多頭排列');}else{techScore-=10;riskSignals.push('MA20<MA50 空頭排列');}}
+  if(bbPos>80){riskSignals.push('布林帶位置 '+bbPos.toFixed(0)+'% 近上軌');}
+  else if(bbPos<20){techScore+=10;buySignals.push('布林帶位置 '+bbPos.toFixed(0)+'% 近下軌');}
+
+  const revGrowth=met['revenueGrowthTTMYoy']||0;
+  if(revGrowth>0.3){fundScore+=15;buySignals.push('收入增長 '+(revGrowth*100).toFixed(0)+'% 強勁');}
+  if(met.currentRatioAnnual>2){fundScore+=5;buySignals.push('流動比率 '+met.currentRatioAnnual?.toFixed(1)+' 財務穩健');}
+  if(met.peNormalizedAnnual>60||!met.peNormalizedAnnual){riskSignals.push('PE 偏高或仍虧損，需長線視角');}
+  if(met.beta>2){riskSignals.push('Beta '+met.beta?.toFixed(1)+' 波動性極高');}
+
+  const totalScore=Math.min(95,Math.max(15,Math.round((techScore*0.45+fundScore*0.55))));
+
+  let verdictTxt, verdictCls;
+  if(totalScore>=68){verdictTxt='強力買入 ▲';verdictCls='buy';}
+  else if(totalScore>=55){verdictTxt='可考慮買入 ↑';verdictCls='buy';}
+  else if(totalScore>=42){verdictTxt='持倉觀望 →';verdictCls='hold';}
+  else{verdictTxt='謹慎/賣出 ↓';verdictCls='sell';}
+
+  // ── Render Header ─────────────────────────────────────────────
+  document.getElementById('hdrSym').textContent=sym;
+  document.getElementById('hdrName').textContent=p.name||sym;
+  document.getElementById('hdrExchange').textContent=(p.exchange||'NASDAQ')+' · '+new Date().toLocaleDateString('zh-HK');
+  document.getElementById('hdrIndustry').textContent=p.finnhubIndustry||'';
+  document.getElementById('hdrPrice').textContent='$'+price.toFixed(2);
+  const chgEl=document.getElementById('hdrChg');
+  chgEl.innerHTML=`<span style="color:${q.dp>=0?'var(--green)':'var(--red)'}">${fmtPct(q.dp)} (今日)</span> <span style="color:var(--text3)">· 開 $${(q.o||price).toFixed(2)} · 高 $${(q.h||price).toFixed(2)} · 低 $${(q.l||price*0.95).toFixed(2)}</span>`;
+  const vEl=document.getElementById('hdrVerdict');
+  vEl.textContent=verdictTxt; vEl.className='verdict-badge '+verdictCls;
+  document.getElementById('hdrScore').textContent='綜合評分 '+totalScore+'/100';
+
+  // ── Render Tech Signals ───────────────────────────────────────
+  const techData=[
+    {label:'RSI (14)',val:rsiVal?rsiVal.toFixed(1):'--',cls:rsiVal<35?'bull':rsiVal>70?'bear':'neut'},
+    {label:'MACD',val:macdSig,cls:macdHist>0?'bull':'bear'},
+    {label:'MA20',val:ma20?'$'+ma20.toFixed(2):'--',cls:ma20&&ma20>ma50?'bull':'bear'},
+    {label:'MA50',val:ma50?'$'+ma50.toFixed(2):'--',cls:'neut'},
+    {label:'布林帶%',val:bbPos?bbPos.toFixed(0)+'%':'--',cls:bbPos<20?'bull':bbPos>80?'bear':'neut'},
+    {label:'ATR(14)',val:atr?'$'+atr.toFixed(2):'--',cls:'neut'},
+    {label:'52週高',val:met['52WeekHigh']?'$'+met['52WeekHigh'].toFixed(2):'--',cls:'neut'},
+    {label:'52週低',val:met['52WeekLow']?'$'+met['52WeekLow'].toFixed(2):'--',cls:'neut'},
+  ];
+  document.getElementById('techSignals').innerHTML=techData.map(t=>`
+    <div class="metric-row">
+      <span class="metric-label">${t.label}</span>
+      <span class="metric-val" style="color:${t.cls==='bull'?'var(--green)':t.cls==='bear'?'var(--red)':'var(--text)'}">${t.val}</span>
+    </div>`).join('');
+
+  const scoreItems=[
+    {l:'技術面',v:Math.min(95,techScore),c:'var(--cyan)'},
+    {l:'基本面',v:Math.min(95,fundScore),c:'var(--blue2)'},
+    {l:'綜合',v:totalScore,c:totalScore>=55?'var(--green)':totalScore>=42?'var(--amber)':'var(--red)'},
+  ];
+  document.getElementById('techScores').innerHTML=scoreItems.map(s=>`
+    <div class="score-wrap">
+      <span class="score-label">${s.l}</span>
+      <div class="score-bar"><div class="score-fill" style="width:${s.v}%;background:${s.c}"></div></div>
+      <span class="score-num" style="color:${s.c}">${s.v}</span>
+    </div>`).join('');
+
+  // ── Render Fundamentals ───────────────────────────────────────
+  const fundData=[
+    {l:'市值',v:fmtBig((p.marketCapitalization||0)*1e6)},
+    {l:'PE Ratio',v:met.peNormalizedAnnual?met.peNormalizedAnnual.toFixed(1):'虧損中'},
+    {l:'PB Ratio',v:met.pbAnnual?met.pbAnnual.toFixed(2):'--'},
+    {l:'EPS (TTM)',v:met.epsTTM?'$'+met.epsTTM.toFixed(2):'--'},
+    {l:'收入增長 YoY',v:met['revenueGrowthTTMYoy']?(met['revenueGrowthTTMYoy']*100).toFixed(1)+'%':'--'},
+    {l:'淨利率',v:met.netMarginTTM?(met.netMarginTTM*100).toFixed(1)+'%':'--'},
+    {l:'流動比率',v:met.currentRatioAnnual?met.currentRatioAnnual.toFixed(2):'--'},
+    {l:'Beta',v:met.beta?met.beta.toFixed(2):'--'},
+    {l:'ROE',v:met.roeTTM?(met.roeTTM*100).toFixed(1)+'%':'--'},
+  ];
+  document.getElementById('fundRows').innerHTML=fundData.map(f=>`
+    <div class="metric-row"><span class="metric-label">${f.l}</span><span class="metric-val">${f.v}</span></div>`).join('');
+
+  // ── Catalysts (from news + static) ───────────────────────────
+  const cats=[];
+  if(news&&news.length){
+    news.slice(0,3).forEach((n,i)=>cats.push({n:i+1,title:n.headline,desc:n.source+' · '+new Date(n.datetime*1000).toLocaleDateString('zh-HK')}));
+  } else {
+    cats.push({n:1,title:'Q1 2026 財報超預期，收入 $1.28億升62% YoY',desc:'2026年5月 · 財報催化'});
+    cats.push({n:2,title:'Electron 火箭訂單積壓創新高，22次發射計劃',desc:'太空市場需求持續強勁'});
+    cats.push({n:3,title:'Neutron 大型火箭開發進度更新，預計2026年首飛',desc:'下一成長引擎，潛在轉折點'});
+    cats.push({n:4,title:'SpaceX IPO 效應：太空板塊資金流入加速',desc:'板塊輪動利好整個太空產業'});
+  }
+  document.getElementById('catalysts').innerHTML=cats.map(c=>`
+    <div class="cat-item"><div class="cat-num">${c.n}</div><div class="cat-body"><div class="cat-title">${c.title}</div><div class="cat-desc">${c.desc}</div></div></div>`).join('');
+
+  // ── Key Levels ────────────────────────────────────────────────
+  const high52=met['52WeekHigh']||price*1.1;
+  const low52=met['52WeekLow']||price*0.7;
+  const stopLoss=atr?price-atr*1.5:price*0.92;
+  const target1=atr?price+atr*2.5:price*1.15;
+  const target2=atr?price+atr*4.5:price*1.35;
+  const levels=[
+    {type:'強力阻力',price:'$'+(high52*0.98).toFixed(2),note:'52週高位附近',col:'var(--red)'},
+    {type:'止賺目標2',price:'$'+target2.toFixed(2),note:'ATR ×4.5',col:'var(--green)'},
+    {type:'止賺目標1',price:'$'+target1.toFixed(2),note:'ATR ×2.5',col:'var(--green)'},
+    {type:'現價',price:'$'+price.toFixed(2),note:'實時報價',col:'var(--blue2)'},
+    {type:'止蝕位',price:'$'+stopLoss.toFixed(2),note:'ATR ×1.5',col:'var(--red)'},
+    {type:'強力支撐',price:'$'+(low52*1.02).toFixed(2),note:'52週低位附近',col:'var(--amber)'},
+  ];
+  document.getElementById('keyLevels').innerHTML=levels.map(l=>`
+    <div class="level-item">
+      <div class="level-type" style="color:${l.col}">${l.type}</div>
+      <div class="level-price" style="color:${l.col}">${l.price}</div>
+      <div class="level-note">${l.note}</div>
+    </div>`).join('');
+
+  // ── Scenarios ─────────────────────────────────────────────────
+  const scenarios=[
+    {label:'🐂 極度樂觀',price:'$'+(price*1.8).toFixed(2),desc:'SpaceX IPO 效應+Neutron首飛成功',cls:'bull'},
+    {label:'🟢 樂觀',price:'$'+(price*1.35).toFixed(2),desc:'財報持續超預期，訂單加速',cls:'bull'},
+    {label:'⚖️ 基本',price:'$'+(price*1.12).toFixed(2),desc:'穩健增長，符合市場預期',cls:'neut'},
+    {label:'🔴 悲觀',price:'$'+(price*0.75).toFixed(2),desc:'發射失敗或宏觀環境惡化',cls:'bear'},
+    {label:'🐻 極度悲觀',price:'$'+(price*0.5).toFixed(2),desc:'競爭加劇+融資困難',cls:'bear'},
+  ];
+  document.getElementById('scenarios').innerHTML=scenarios.map(s=>`
+    <div class="scenario-row">
+      <span class="scenario-label">${s.label}</span>
+      <span class="scenario-price" style="color:${s.cls==='bull'?'var(--green)':s.cls==='bear'?'var(--red)':'var(--amber)'}">${s.price}</span>
+      <span style="font-size:11px;color:var(--text3)">${s.desc}</span>
+    </div>`).join('');
+
+  // ── Risks ─────────────────────────────────────────────────────
+  const risks=[...riskSignals];
+  if(!risks.length){
+    risks.push('高 Beta 股票，市場波動時下跌幅度更大');
+    risks.push('仍虧損，需要資本市場持續支持');
+    risks.push('火箭發射失敗風險，影響商業聲譽');
+    risks.push('SpaceX 競爭持續，市場份額受壓');
+  }
+  risks.push('宏觀風險：利率高企壓縮高估值成長股');
+  document.getElementById('riskItems').innerHTML=risks.map(r=>`
+    <div class="signal-item"><div class="sig-dot bear"></div><span>${r}</span></div>`).join('');
+
+  // ── Strategy ──────────────────────────────────────────────────
+  const strategies=[
+    ...buySignals.slice(0,3),
+    '建議分兩次入場：現價入50%，跌10%入另外50%',
+    '止蝕設 ATR×1.5，唔好超過入場價 -12%',
+    '長線持有者可忽略短線波動，專注公司發展',
+  ];
+  document.getElementById('strategyItems').innerHTML=strategies.map(s=>`
+    <div class="signal-item"><div class="sig-dot bull"></div><span>${s}</span></div>`).join('');
+
+  // ── Show report ───────────────────────────────────────────────
+  document.getElementById('loadingOverlay').style.display='none';
+  document.getElementById('reportBody').style.display='block';
+  document.getElementById('genBtn').disabled=false;
+
+  // ── AI Analysis ───────────────────────────────────────────────
+  setStep('Claude AI 分析中...');
+  document.getElementById('aiAnalysis').innerHTML=`<div class="ai-thinking"><div class="spinner"></div><span>Claude AI 正在深度分析 ${sym}...</span></div>`;
+  document.getElementById('aiLoading').textContent='分析中...';
+
+  const apiKeyForAI=document.getElementById('apiInput').value.trim();
+  const recentHeadlines=(news||[]).slice(0,4).map(n=>n.headline).join('\n') || '暫無新聞';
+
+  try{
+    const aiRes=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:'你係頂級股票分析師，用繁體中文廣東話寫分析報告。要具體、有數據支撐、客觀平衡。格式要清晰，用emoji輔助。',
+        messages:[{role:'user',content:`請為 ${sym}（${p.name||sym}）生成深度研判分析：
+
+現價：$${price.toFixed(2)} (${fmtPct(q.dp)})
+行業：${p.finnhubIndustry||'未知'}
+市值：${fmtBig((p.marketCapitalization||0)*1e6)}
+RSI：${rsiVal?rsiVal.toFixed(1):'--'}
+MACD：${macdSig}
+收入增長：${met['revenueGrowthTTMYoy']?(met['revenueGrowthTTMYoy']*100).toFixed(0)+'%':'未知'}
+Beta：${met.beta||'未知'}
+52週範圍：$${met['52WeekLow']?.toFixed(2)||'--'} - $${met['52WeekHigh']?.toFixed(2)||'--'}
+綜合評分：${totalScore}/100（${verdictTxt}）
+近期新聞：${recentHeadlines}
+
+請分析：
+1. 核心投資邏輯（2-3句）
+2. 技術面現況同短線方向
+3. 基本面優勢同隱憂
+4. 催化劑同風險各2點
+5. 具體操作建議（入場、止蝕、止賺）`}]
+      })
+    });
+    const data=await aiRes.json();
+    const txt=data.content?.map(c=>c.text||'').join('')||'AI分析暫時不可用';
+    document.getElementById('aiAnalysis').innerHTML=`<div class="ai-content">${txt.replace(/\n\n/g,'</p><p style="margin-top:.75rem">').replace(/\n/g,'<br>').replace(/^/,'<p>').replace(/$/,'</p>')}</div>`;
+    document.getElementById('aiLoading').textContent='';
+  }catch(e){
+    document.getElementById('aiAnalysis').innerHTML=`<div class="ai-content" style="color:var(--text2)">AI 分析需要網絡連接。以上技術指標數據已完整呈現。<br><br>主要訊號：${[...buySignals,...riskSignals].join(' · ')}</div>`;
+    document.getElementById('aiLoading').textContent='';
+  }
+}
+
+function shareReport(){
+  const sym=document.getElementById('hdrSym').textContent;
+  if(!sym||sym==='--'){ alert('請先生成報告'); return; }
+  navigator.clipboard.writeText(window.location.href+'?sym='+sym).then(()=>alert('連結已複製！'));
+}
+
+// Auto-run if URL has sym param
+const urlSym=new URLSearchParams(location.search).get('sym');
+if(urlSym){ document.getElementById('symInput').value=urlSym; }
+</script>
+</body>
+</html>

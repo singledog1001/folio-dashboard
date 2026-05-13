@@ -296,6 +296,11 @@ html.dark .muted{color:var(--ink2)!important}
     <button class="btn" onclick="loadAll()" id="loadBtn">載入數據 ↗</button>
     <button class="btn soft" onclick="useDemo()">演示模式</button>
     <button onclick="openSearch()" style="background:var(--input-bg);border:1px solid var(--topbar-border);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif" title="搜尋股票 (/)"><span>🔍</span><span style="font-size:12px;color:var(--ink2)">搜尋股票</span><span style="font-size:11px;color:var(--ink3);background:var(--ph1);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace">/</span></button>
+    <a href="report.html" target="_blank"
+      style="display:inline-flex;align-items:center;gap:5px;background:var(--input-bg);border:1px solid var(--topbar-border);border-radius:10px;padding:8px 14px;font-size:13px;cursor:pointer;color:var(--ink);text-decoration:none;transition:all .15s;font-weight:500"
+      onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--topbar-border)'">
+      📊 研判報告
+    </a>
     <button id="darkToggle" onclick="toggleDark()" style="background:none;border:1px solid var(--topbar-border);border-radius:10px;padding:8px 14px;font-size:16px;cursor:pointer;transition:all .2s;color:var(--ink2)" title="切換深色/淺色模式">🌙</button>
   </div>
 </div>
@@ -615,6 +620,7 @@ html.dark .muted{color:var(--ink2)!important}
             onfocus="this.style.borderColor='var(--blue)'" onblur="this.style.borderColor='var(--topbar-border)'" />
           <div style="display:flex;gap:6px;flex-wrap:wrap">
             <button class="btn" onclick="runAnalysis()" id="analysisBtnRun">分析 ↗</button>
+            <button class="btn soft" onclick="openReportPage()" style="display:flex;align-items:center;gap:5px;font-size:12px">📊 研判報告</button>
             <button class="btn soft" onclick="setAnalysisSym('NVDA')">NVDA</button>
             <button class="btn soft" onclick="setAnalysisSym('AAPL')">AAPL</button>
             <button class="btn soft" onclick="setAnalysisSym('TSLA')">TSLA</button>
@@ -2537,6 +2543,14 @@ try{
 fetchFXRate();
 setTimeout(renderT212Quick, 500);
 
+
+
+function openReportPage(){
+  const sym = document.getElementById('analysisSym').value.trim().toUpperCase() || '';
+  const key = API || '';
+  const url = 'report.html'+(sym?'?sym='+sym:'');
+  window.open(url, '_blank');
+}
 
 // ── Dark Mode ─────────────────────────────────────────────────────────────
 function saveProxyUrl(url){
